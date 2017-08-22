@@ -565,19 +565,19 @@ protected:
     /**
     * Sets all collisions Active, Inactive or Defined per Mesh Layer (see PhysicsInfo -> Collision)
     */
-    UPROPERTY(EditAnywhere, Category = "FlexSpline|Global")
-    EFlexGlobalConfigType CollisionActive;
+    UPROPERTY(EditAnywhere, Category = "FlexSpline|Global", meta = (DisplayName = "CollisionActive"))
+    EFlexGlobalConfigType CollisionActiveConfig;
 
     /**
     * Allow spline points to synchronize their start values with the previous point's
     * end values. Can be configured per spline point.
     */
-    UPROPERTY(EditAnywhere, Category = "FlexSpline|Global")
-    EFlexGlobalConfigType Synchronize;
+    UPROPERTY(EditAnywhere, Category = "FlexSpline|Global", meta = (DisplayName = "Synchronize"))
+    EFlexGlobalConfigType SynchronizeConfig;
 
     /** Should spline bite its own tail? */
-    UPROPERTY(EditAnywhere, Category = "FlexSpline|Global")
-    EFlexGlobalConfigType Loop;
+    UPROPERTY(EditAnywhere, Category = "FlexSpline|Global", meta = (DisplayName = "Loop"))
+    EFlexGlobalConfigType LoopConfig;
 
     /** Blueprint for new "Mesh Layer" entries */
     UPROPERTY(EditAnywhere, Category = "FlexSpline|Global", meta = (DisplayName = "Mesh Layer Template"))

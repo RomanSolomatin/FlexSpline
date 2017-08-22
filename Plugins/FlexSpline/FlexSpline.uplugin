@@ -1,8 +1,8 @@
 {
 	"FileVersion": 3,
-	"Version": 1600,
-	"VersionName": "16.0.0",
-	"EngineVersion": "4.16.0",
+	"Version": 1700,
+	"VersionName": "17.0.0",
+	"EngineVersion": "4.17.0",
 	"FriendlyName": "Flex Spline",
 	"Description": "Powerful and Generic Spline System Creation Tool",
 	"Category": "Spline",

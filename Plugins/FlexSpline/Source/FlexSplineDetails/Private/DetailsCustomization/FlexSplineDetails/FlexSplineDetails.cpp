@@ -43,8 +43,8 @@ using SetSliderFuncPtr    = void (FFlexSplineNodeBuilder::*)(float NewValue, EAx
 #define LOCTEXT_NAMESPACE        "FlexSplineDetails"
 #define SPINBOX_DELTA            0.01f
 #define SINGLE_SPINBOX_WIDTH     110.f
-#define DOUBLE_SPINBOX_WIDTH     220.f
-#define TRIPLE_SPINBOX_WIDTH     330.f
+#define DOUBLE_SPINBOX_WIDTH     SINGLE_SPINBOX_WIDTH * 2.f
+#define TRIPLE_SPINBOX_WIDTH     SINGLE_SPINBOX_WIDTH * 3.f
 #define MULTI_VAL_TEXT           LOCTEXT("MultVal", "Multiple Values")
 #define SYNC_TOOLTIP             LOCTEXT("SyncTip", "Only Editable If Not Synchronized")
 #define GLOBAL_SYNC_TOOLTIP      LOCTEXT("GlobalSyncTip","Only Editable If Snychronisation Is Marked As Custom")
@@ -324,7 +324,7 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
     const auto FontInfo = IDetailLayoutBuilder::GetDetailFont();
     auto typeInterface = MakeShareable(new TNumericUnitTypeInterface<float>(EUnit::Degrees));
 
-    IDetailGroup& splineGroup = ChildrenBuilder.AddChildGroup("SplineGroup", LOCTEXT("SplineMeshGroup", "Point Spline-Mesh Config"));
+    IDetailGroup& splineGroup = ChildrenBuilder.AddGroup("SplineGroup", LOCTEXT("SplineMeshGroup", "Point Spline-Mesh Config"));
     // Message which is shown when no points are selected
     splineGroup.AddWidgetRow()
         .Visibility(TAttribute<EVisibility>(this, &FFlexSplineNodeBuilder::ShowNotVisibleSpline))
@@ -632,7 +632,7 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
 #pragma endregion
 
 
-    IDetailGroup& staticGroup = ChildrenBuilder.AddChildGroup("StaticGroup", LOCTEXT("StaticMeshGroup", "Point Static-Mesh Config"));
+    IDetailGroup& staticGroup = ChildrenBuilder.AddGroup("StaticGroup", LOCTEXT("StaticMeshGroup", "Point Static-Mesh Config"));
     // Message which is shown when no points are selected
     staticGroup.AddWidgetRow()
         .Visibility(TAttribute<EVisibility>(this, &FFlexSplineNodeBuilder::ShowNotVisibleStatic))
@@ -825,11 +825,11 @@ bool FFlexSplineNodeBuilder::IsSyncDisabled() const
     AFlexSplineActor* flex = GetFlexSpline();
     if (flex)
     {
-        if (flex->Synchronize == EFlexGlobalConfigType::Everywhere)
+        if (flex->SynchronizeConfig == EFlexGlobalConfigType::Everywhere)
         {
             result = false;
         }
-        else if (flex->Synchronize == EFlexGlobalConfigType::Custom)
+        else if (flex->SynchronizeConfig == EFlexGlobalConfigType::Custom)
         {
             for (int32 index : SelectedKeys)
             {
@@ -855,7 +855,7 @@ bool FFlexSplineNodeBuilder::IsSyncGloballyEnabled() const
     const auto flex = GetFlexSpline();
     if (flex)
     {
-        result = (flex->Synchronize == EFlexGlobalConfigType::Custom);
+        result = (flex->SynchronizeConfig == EFlexGlobalConfigType::Custom);
     }
     return result;
 }

@@ -174,9 +174,9 @@ FSplineMeshInitData::~FSplineMeshInitData()
 // CONSTRUCTOR + BASE INTERFACE + GETTER
 AFlexSplineActor::AFlexSplineActor()
     : Super()
-    , CollisionActive(EFlexGlobalConfigType::Nowhere)
-    , Synchronize(EFlexGlobalConfigType::Custom)
-    , Loop(EFlexGlobalConfigType::Custom)
+    , CollisionActiveConfig(EFlexGlobalConfigType::Nowhere)
+    , SynchronizeConfig(EFlexGlobalConfigType::Custom)
+    , LoopConfig(EFlexGlobalConfigType::Custom)
     , bShowPointNumbers(false)
     , PointNumberSize(125.f)
     , UpDirectionArrowSize(3.f)
@@ -642,7 +642,7 @@ ECollisionEnabled::Type AFlexSplineActor::GetCollisionEnabled(const FSplineMeshI
 {
     ECollisionEnabled::Type result = ECollisionEnabled::NoCollision;
 
-    switch (CollisionActive)
+    switch (CollisionActiveConfig)
     {
     case EFlexGlobalConfigType::Everywhere: result = ECollisionEnabled::QueryAndPhysics; break;
     case EFlexGlobalConfigType::Nowhere:    result = ECollisionEnabled::NoCollision; break;
@@ -657,7 +657,7 @@ bool AFlexSplineActor::GetCanLoop(const FSplineMeshInitData& MeshInitData) const
 {
     bool result = false;
 
-    switch (Loop)
+    switch (LoopConfig)
     {
     case EFlexGlobalConfigType::Everywhere: result = true;                                                        break;
     case EFlexGlobalConfigType::Nowhere:    result = false;                                                       break;
@@ -672,7 +672,7 @@ bool AFlexSplineActor::GetCanSynchronize(const FSplinePointData& PointData) cons
 {
     bool result = false;
 
-    switch (Synchronize)
+    switch (SynchronizeConfig)
     {
     case EFlexGlobalConfigType::Everywhere: result = true; break;
     case EFlexGlobalConfigType::Nowhere:    result = false; break;
