@@ -6,7 +6,6 @@
 * @Package      Flex Spline
 ******************************************************************************/
 
-// ReSharper disable once CppUnusedIncludeDirective
 #include "FlexSplineDetailsPrivatePCH.h"
 #include "FlexSplineDetails.h"
 #include "FlexSplineActor.h"
@@ -40,17 +39,19 @@ class FFlexSplineNodeBuilder;
 using WeakSplineComponent = TWeakObjectPtr<USplineComponent>;
 using SetSliderFuncPtr    = void (FFlexSplineNodeBuilder::*)(float NewValue, EAxis::Type Axis, AFlexSplineActor* FlexSpline);
 
-#define LOCTEXT_NAMESPACE        "FlexSplineDetails"
-#define SPINBOX_DELTA            0.01f
-#define SINGLE_SPINBOX_WIDTH     110.f
-#define DOUBLE_SPINBOX_WIDTH     SINGLE_SPINBOX_WIDTH * 2.f
-#define TRIPLE_SPINBOX_WIDTH     SINGLE_SPINBOX_WIDTH * 3.f
-#define MULTI_VAL_TEXT           LOCTEXT("MultVal", "Multiple Values")
-#define SYNC_TOOLTIP             LOCTEXT("SyncTip", "Only Editable If Not Synchronized")
-#define GLOBAL_SYNC_TOOLTIP      LOCTEXT("GlobalSyncTip","Only Editable If Snychronisation Is Marked As Custom")
-#define NO_SELECTION_MESSAGE     LOCTEXT("NoPointsSelected", "No Flex Spline Points Are Selected")
-#define NO_SPLINE_MESHES_MESSAGE LOCTEXT("NoSplineMeshes", "There are no active Spline Meshes to Edit")
-#define NO_STATIC_MESHES_MESSAGE LOCTEXT("NoStaticMeshes", "There are no active Static Meshes to Edit")
+#define LOCTEXT_NAMESPACE "FlexSplineDetails"
+
+static constexpr float SpinboxDelta       = 0.01f;
+static constexpr float SingleSpinboxWidth = 110.f;
+static constexpr float DoubleSpinboxWidth = SingleSpinboxWidth * 2.f;
+static constexpr float TripleSpinboxWidth = SingleSpinboxWidth * 3.f;
+static const FText MultipleValuesText     = LOCTEXT("MultVal", "Multiple Values");
+static const FText SyncTooltipText        = LOCTEXT("SyncTip", "Only Editable If Not Synchronized");
+static const FText GlobalSyncTooltipText  = LOCTEXT("GlobalSyncTip", "Only Editable If Snychronisation Is Marked As Custom");
+static const FText NoSelectionText        = LOCTEXT("NoPointsSelected", "No Flex Spline Points Are Selected");
+static const FText NoSplineMeshesText     = LOCTEXT("NoSplineMeshes", "There Are No Active Spline Meshes To Edit");
+static const FText NoStaticMeshesText     = LOCTEXT("NoStaticMeshes", "There Are No Active Static Meshes To Edit");
+
 
 struct FSetSliderAdditionalArgs
 {
@@ -343,15 +344,15 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             SNew(STextBlock)
             .Text(LOCTEXT("StartRoll", "Start Roll"))
             .Font(FontInfo)
-            .ToolTip(IDocumentation::Get()->CreateToolTip(SYNC_TOOLTIP, nullptr, TEXT("Shared/LevelEditor"), TEXT("")))
+            .ToolTip(IDocumentation::Get()->CreateToolTip(SyncTooltipText, nullptr, TEXT("Shared/LevelEditor"), TEXT("")))
         ]
         .ValueContent()
-        .MinDesiredWidth(SINGLE_SPINBOX_WIDTH)
-        .MaxDesiredWidth(SINGLE_SPINBOX_WIDTH)
+        .MinDesiredWidth(SingleSpinboxWidth)
+        .MaxDesiredWidth(SingleSpinboxWidth)
         [
             SNew(SNumericEntryBox<float>)
             .Font(FontInfo)
-            .UndeterminedString(MULTI_VAL_TEXT)
+            .UndeterminedString(MultipleValuesText)
             .AllowSpin(true)
             .MinValue(TOptional<float>())
             .MaxValue(TOptional<float>())
@@ -378,11 +379,11 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             SNew(STextBlock)
             .Text(LOCTEXT("StartScale", "Start Scale"))
             .Font(FontInfo)
-            .ToolTip(IDocumentation::Get()->CreateToolTip(SYNC_TOOLTIP, nullptr, TEXT("Shared/LevelEditor"), ""))
+            .ToolTip(IDocumentation::Get()->CreateToolTip(SyncTooltipText, nullptr, TEXT("Shared/LevelEditor"), ""))
         ]
         .ValueContent()
-        .MinDesiredWidth(DOUBLE_SPINBOX_WIDTH)
-        .MaxDesiredWidth(DOUBLE_SPINBOX_WIDTH)
+        .MinDesiredWidth(DoubleSpinboxWidth)
+        .MaxDesiredWidth(DoubleSpinboxWidth)
         [
             SNew(SFlexVectorInputBox)
             .Font(FontInfo)
@@ -393,7 +394,7 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .MinSliderValue(0.f)
             .MaxValue(TOptional<float>())
             .MaxSliderValue(TOptional<float>())
-            .Delta(SPINBOX_DELTA)
+            .Delta(SpinboxDelta)
             .OnBeginSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, 0.f, ESliderMode::BeginSlider, TransactionTexts[1])
             .OnEndSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, ESliderMode::EndSlider, FText())
             .X(this, &FFlexSplineNodeBuilder::GetStartScale, EAxis::X)
@@ -420,11 +421,11 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             SNew(STextBlock)
             .Text(LOCTEXT("StartOffset", "Start Offset"))
             .Font(FontInfo)
-            .ToolTip(IDocumentation::Get()->CreateToolTip(SYNC_TOOLTIP, nullptr, TEXT("Shared/LevelEditor"), ""))
+            .ToolTip(IDocumentation::Get()->CreateToolTip(SyncTooltipText, nullptr, TEXT("Shared/LevelEditor"), ""))
         ]
         .ValueContent()
-        .MinDesiredWidth(DOUBLE_SPINBOX_WIDTH)
-        .MaxDesiredWidth(DOUBLE_SPINBOX_WIDTH)
+        .MinDesiredWidth(DoubleSpinboxWidth)
+        .MaxDesiredWidth(DoubleSpinboxWidth)
         [
             SNew(SFlexVectorInputBox)
             .Font(FontInfo)
@@ -435,7 +436,7 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .MinSliderValue(TOptional<float>())
             .MaxValue(TOptional<float>())
             .MaxSliderValue(TOptional<float>())
-            .Delta(SPINBOX_DELTA)
+            .Delta(SpinboxDelta)
             .OnBeginSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, 0.f, ESliderMode::BeginSlider, TransactionTexts[2])
             .OnEndSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, ESliderMode::EndSlider, FText())
             .X(this, &FFlexSplineNodeBuilder::GetStartOffset, EAxis::X)
@@ -463,12 +464,12 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .Font(FontInfo)
         ]
         .ValueContent()
-        .MinDesiredWidth(SINGLE_SPINBOX_WIDTH)
-        .MaxDesiredWidth(SINGLE_SPINBOX_WIDTH)
+        .MinDesiredWidth(SingleSpinboxWidth)
+        .MaxDesiredWidth(SingleSpinboxWidth)
         [
             SNew(SNumericEntryBox<float>)
             .Font(FontInfo)
-            .UndeterminedString(MULTI_VAL_TEXT)
+            .UndeterminedString(MultipleValuesText)
             .AllowSpin(true)
             .MinValue(TOptional<float>())
             .MaxValue(TOptional<float>())
@@ -496,8 +497,8 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .Font(FontInfo)
         ]
         .ValueContent()
-        .MinDesiredWidth(DOUBLE_SPINBOX_WIDTH)
-        .MaxDesiredWidth(DOUBLE_SPINBOX_WIDTH)
+        .MinDesiredWidth(DoubleSpinboxWidth)
+        .MaxDesiredWidth(DoubleSpinboxWidth)
         [
             SNew(SFlexVectorInputBox)
             .Font(FontInfo)
@@ -508,7 +509,7 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .MinSliderValue(0.f)
             .MaxValue(TOptional<float>())
             .MaxSliderValue(TOptional<float>())
-            .Delta(SPINBOX_DELTA)
+            .Delta(SpinboxDelta)
             .OnBeginSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, 0.f, ESliderMode::BeginSlider, TransactionTexts[4])
             .OnEndSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, ESliderMode::EndSlider, FText())
             .X(this, &FFlexSplineNodeBuilder::GetEndScale, EAxis::X)
@@ -536,8 +537,8 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .Font(FontInfo)
         ]
         .ValueContent()
-        .MinDesiredWidth(DOUBLE_SPINBOX_WIDTH)
-        .MaxDesiredWidth(DOUBLE_SPINBOX_WIDTH)
+        .MinDesiredWidth(DoubleSpinboxWidth)
+        .MaxDesiredWidth(DoubleSpinboxWidth)
         [
             SNew(SFlexVectorInputBox)
             .Font(FontInfo)
@@ -548,7 +549,7 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .MinSliderValue(TOptional<float>())
             .MaxValue(TOptional<float>())
             .MaxSliderValue(TOptional<float>())
-            .Delta(SPINBOX_DELTA)
+            .Delta(SpinboxDelta)
             .OnBeginSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, 0.f, ESliderMode::BeginSlider, TransactionTexts[5])
             .OnEndSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, ESliderMode::EndSlider, FText())
             .X(this, &FFlexSplineNodeBuilder::GetEndOffset, EAxis::X)
@@ -576,8 +577,8 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .Font(FontInfo)
         ]
         .ValueContent()
-        .MinDesiredWidth(TRIPLE_SPINBOX_WIDTH)
-        .MaxDesiredWidth(TRIPLE_SPINBOX_WIDTH)
+        .MinDesiredWidth(TripleSpinboxWidth)
+        .MaxDesiredWidth(TripleSpinboxWidth)
         [
             SNew(SFlexVectorInputBox)
             .bIsVector3D(true)
@@ -589,7 +590,7 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .MinSliderValue(TOptional<float>())
             .MaxValue(TOptional<float>())
             .MaxSliderValue(TOptional<float>())
-            .Delta(SPINBOX_DELTA)
+            .Delta(SpinboxDelta)
             .OnBeginSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, 0.f, ESliderMode::BeginSlider, TransactionTexts[6])
             .OnEndSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, ESliderMode::EndSlider, FText())
             .X(this, &FFlexSplineNodeBuilder::GetUpDirection, EAxis::X)
@@ -621,7 +622,7 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             SNew(STextBlock)
             .Text(LOCTEXT("Sync", "Synchronize With Previous"))
             .Font(FontInfo)
-            .ToolTip(IDocumentation::Get()->CreateToolTip(GLOBAL_SYNC_TOOLTIP, nullptr, TEXT("Shared/LevelEditor"), ""))
+            .ToolTip(IDocumentation::Get()->CreateToolTip(GlobalSyncTooltipText, nullptr, TEXT("Shared/LevelEditor"), ""))
         ]
         .ValueContent()
         [
@@ -652,8 +653,8 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .Font(FontInfo)
         ]
         .ValueContent()
-        .MinDesiredWidth(TRIPLE_SPINBOX_WIDTH)
-        .MaxDesiredWidth(TRIPLE_SPINBOX_WIDTH)
+        .MinDesiredWidth(TripleSpinboxWidth)
+        .MaxDesiredWidth(TripleSpinboxWidth)
         [
             SNew(SFlexVectorInputBox)
             .bIsVector3D(true)
@@ -665,7 +666,7 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .MinSliderValue(TOptional<float>())
             .MaxValue(TOptional<float>())
             .MaxSliderValue(TOptional<float>())
-            .Delta(SPINBOX_DELTA)
+            .Delta(SpinboxDelta)
             .OnBeginSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, 0.f, ESliderMode::BeginSlider, TransactionTexts[8])
             .OnEndSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, ESliderMode::EndSlider, FText())
             .X(this, &FFlexSplineNodeBuilder::GetSMLocationOffset, EAxis::X)
@@ -698,8 +699,8 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .Font(FontInfo)
         ]
         .ValueContent()
-        .MinDesiredWidth(TRIPLE_SPINBOX_WIDTH)
-        .MaxDesiredWidth(TRIPLE_SPINBOX_WIDTH)
+        .MinDesiredWidth(TripleSpinboxWidth)
+        .MaxDesiredWidth(TripleSpinboxWidth)
         [
             SNew(SFlexVectorInputBox)
             .bIsVector3D(true)
@@ -711,7 +712,7 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .MinSliderValue(TOptional<float>())
             .MaxValue(TOptional<float>())
             .MaxSliderValue(TOptional<float>())
-            .Delta(SPINBOX_DELTA)
+            .Delta(SpinboxDelta)
             .OnBeginSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, 0.f, ESliderMode::BeginSlider, TransactionTexts[9])
             .OnEndSliderMovement(this, &FFlexSplineNodeBuilder::OnSliderAction, ESliderMode::EndSlider, FText())
             .X(this, &FFlexSplineNodeBuilder::GetSMScale, EAxis::X)
@@ -744,8 +745,8 @@ void FFlexSplineNodeBuilder::GenerateChildContent(IDetailChildrenBuilder& Childr
             .Font(FontInfo)
         ]
         .ValueContent()
-        .MinDesiredWidth(TRIPLE_SPINBOX_WIDTH)
-        .MaxDesiredWidth(TRIPLE_SPINBOX_WIDTH)
+        .MinDesiredWidth(TripleSpinboxWidth)
+        .MaxDesiredWidth(TripleSpinboxWidth)
         [
             SNew(SRotatorInputBox)
             .AllowSpin(true)
@@ -802,7 +803,7 @@ TSharedRef<SWidget> FFlexSplineNodeBuilder::BuildNotVisibleMessage(EFlexSplineMe
 
 FText FFlexSplineNodeBuilder::GetNoSelectionText(EFlexSplineMeshType MeshType) const
 {
-    FText message = NO_SELECTION_MESSAGE;
+    FText message = NoSelectionText;
     const auto flexSpline = GetFlexSpline();
     if (flexSpline && IsFlexSplineSelected())
     {
@@ -810,8 +811,8 @@ FText FFlexSplineNodeBuilder::GetNoSelectionText(EFlexSplineMeshType MeshType) c
         {
             switch (MeshType)
             {
-            case EFlexSplineMeshType::SplineMesh: message = NO_SPLINE_MESHES_MESSAGE; break;
-            case EFlexSplineMeshType::StaticMesh: message = NO_STATIC_MESHES_MESSAGE; break;
+            case EFlexSplineMeshType::SplineMesh: message = NoSplineMeshesText; break;
+            case EFlexSplineMeshType::StaticMesh: message = NoStaticMeshesText; break;
             }
         }
     }
