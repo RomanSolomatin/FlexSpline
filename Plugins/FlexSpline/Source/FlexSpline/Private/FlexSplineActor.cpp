@@ -8,7 +8,6 @@
 
 #include "FlexSplinePrivatePCH.h"
 #include "FlexSplineActor.h"
-#include "Algo/Reverse.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
 #include "Components/ArrowComponent.h"
@@ -58,11 +57,11 @@ static FVector RandomizeVector(const FVector& InVec, int32 Index, FName Layernam
     float randY = 0.f;
     float randZ = 0.f;
 
-    if (InVec.X != 0)
+    if (InVec.X != 0.f)
         randX = RandomizeFloat(InVec.X, Index, Layername);
-    if (InVec.Y != 0)
+    if (InVec.Y != 0.f)
         randY = RandomizeFloat(InVec.Y, Index, Layername);
-    if (InVec.Z != 0)
+    if (InVec.Z != 0.f)
         randZ = RandomizeFloat(InVec.Z, Index, Layername);
 
     return FVector(randX, randY, randZ);
