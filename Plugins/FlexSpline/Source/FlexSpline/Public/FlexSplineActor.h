@@ -12,8 +12,8 @@
 #include "FlexSplineTypes.h"
 #include "FlexSplineActor.generated.h"
 
-using WeakStaticMeshComp = TWeakObjectPtr<class UStaticMeshComponent>;
-using WeakArrowComp      = TWeakObjectPtr<class UArrowComponent>;
+using StaticMeshWeakPtr = TWeakObjectPtr<class UStaticMeshComponent>;
+using ArrowWeakPtr      = TWeakObjectPtr<class UArrowComponent>;
 
 
 /** Generic (XYZ - )Axis Type */
@@ -333,10 +333,10 @@ struct FSplineMeshInitData
     * Stores all spline mesh components, driven by data from this instance
     * Each mesh is associated to a spline point via its index
     */
-    TArray<WeakStaticMeshComp> MeshComponentsArray;
+    TArray<StaticMeshWeakPtr> MeshComponentsArray;
 
     /** Shows the spline up vector at each spline point */
-    TArray<WeakArrowComp> ArrowSplineUpIndicatorArray;
+    TArray<ArrowWeakPtr> ArrowSplineUpIndicatorArray;
 
 
     FSplineMeshInitData()

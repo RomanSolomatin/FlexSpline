@@ -53,16 +53,9 @@ static float RandomizeFloat(float InFloat, int32 Index, FName Layername)
 
 static FVector RandomizeVector(const FVector& InVec, int32 Index, FName Layername)
 {
-    float randX = 0.f;
-    float randY = 0.f;
-    float randZ = 0.f;
-
-    if (InVec.X != 0.f)
-        randX = RandomizeFloat(InVec.X, Index, Layername);
-    if (InVec.Y != 0.f)
-        randY = RandomizeFloat(InVec.Y, Index, Layername);
-    if (InVec.Z != 0.f)
-        randZ = RandomizeFloat(InVec.Z, Index, Layername);
+    const float randX = (InVec.X != 0.f) ? RandomizeFloat(InVec.X, Index, Layername) : 0.f;
+    const float randY = (InVec.Y != 0.f) ? RandomizeFloat(InVec.Y, Index, Layername) : 0.f;
+    const float randZ = (InVec.Z != 0.f) ? RandomizeFloat(InVec.Z, Index, Layername) : 0.f;
 
     return FVector(randX, randY, randZ);
 }
@@ -70,22 +63,15 @@ static FVector RandomizeVector(const FVector& InVec, int32 Index, FName Layernam
 static FRotator RandomizeRotator(const FRotator& InRot, int32 Index, FName Layername)
 {
     // Maps rotator values onto a vector, randomizes, then reverses back to rotator
-    FVector vecFromRot = FVector(InRot.Pitch, InRot.Yaw, InRot.Roll);
-    vecFromRot = RandomizeVector(vecFromRot, Index, Layername);
-
+    const FVector vecFromRot = RandomizeVector(FVector(InRot.Pitch, InRot.Yaw, InRot.Roll), Index, Layername);
     return FRotator(vecFromRot.X, vecFromRot.Y, vecFromRot.Z);
 }
 
 static uint32 GeneratePointHashValue(const USplineComponent* const SplineComp, int32 Index)
 {
-    uint32 result = 0;
-    if (SplineComp)
-    {
-        const auto location = SplineComp->GetLocationAtSplinePoint(Index, LocalSpace);
-        result = GetTypeHash(location);
-    }
-
-    return result;
+    return SplineComp != nullptr
+         ? GetTypeHash(SplineComp->GetLocationAtSplinePoint(Index, LocalSpace))
+         : 0;
 }
 
 static float FSeededRand(int32 Seed)
@@ -95,40 +81,32 @@ static float FSeededRand(int32 Seed)
 
 static UClass* GetMeshType(EFlexSplineMeshType MeshType)
 {
-    UClass* meshClass = nullptr;
     switch (MeshType)
     {
-    case EFlexSplineMeshType::SplineMesh: meshClass = SplineMeshClass; break;
-    case EFlexSplineMeshType::StaticMesh: meshClass = StaticMeshClass; break;
-    default: break;
+    case EFlexSplineMeshType::SplineMesh: return SplineMeshClass;
+    case EFlexSplineMeshType::StaticMesh: return StaticMeshClass;
+    default: return nullptr;
     }
-
-    return meshClass;
 }
 
 static bool CanRenderFromSpawnChance(const FSplineMeshInitData& MeshInitData, int32 CurrentIndex)
 {
-    bool result;
-    const auto meshComp     = MeshInitData.MeshComponentsArray[CurrentIndex];
     const float spawnChance = MeshInitData.RenderInfo.SpawnChance;
-    const int32 spawnSeed   = GetTypeHash(meshComp->GetName()) * spawnChance;
+    const int32 spawnSeed   = GetTypeHash(MeshInitData.MeshComponentsArray[CurrentIndex]->GetName()) * spawnChance;
 
-    if (MeshInitData.RenderInfo.bRandomizeSpawnChance) // Random spawn chance for each point
+    if (MeshInitData.RenderInfo.bRandomizeSpawnChance)
     {
-        result = spawnChance > FSeededRand(spawnSeed);
-    }
-    else                                               // Accumulated spawn chance for each point
-    {
-        // Compare index-spawn-chance-ratio and see if it has changed from ratio of last index
-        const float interval     = 1.f / FMath::Clamp(spawnChance, 0.00001f, 1.f);
-        const int32 currentRatio = static_cast<int32>(CurrentIndex / interval);
-        const int32 lastRatio    = (CurrentIndex <= 0)
-                                 ? (spawnChance > 0.f ? 1 : 0) // edge case first index
-                                 : (static_cast<int32>(((CurrentIndex - 1) / interval)));
-        result = (currentRatio != lastRatio);
+        return spawnChance > FSeededRand(spawnSeed);
     }
 
-    return result;
+    // Compare index-spawn-chance-ratio and see if it has changed from ratio of last index
+    const float interval     = 1.f / FMath::Clamp(spawnChance, 0.00001f, 1.f);
+    const int32 currentRatio = static_cast<int32>(CurrentIndex / interval);
+    const int32 lastRatio    = CurrentIndex <= 0
+                             ? spawnChance > 0.f ? 1 : 0 // edge case first index
+                             : static_cast<int32>(((CurrentIndex - 1) / interval));
+
+    return currentRatio != lastRatio;
 }
 
 static ESplineMeshAxis::Type ToSplineAxis(EFlexSplineAxis FlexSplineAxis)
@@ -138,7 +116,7 @@ static ESplineMeshAxis::Type ToSplineAxis(EFlexSplineAxis FlexSplineAxis)
 
 void DestroyMeshComponent(FSplineMeshInitData& MeshInitData, int32 Index)
 {
-    WeakStaticMeshComp mesh = MeshInitData.MeshComponentsArray[Index];
+    StaticMeshWeakPtr mesh = MeshInitData.MeshComponentsArray[Index];
     if (mesh.IsValid())
     {
         mesh->DestroyComponent();
@@ -151,15 +129,14 @@ void DestroyMeshComponent(FSplineMeshInitData& MeshInitData, int32 Index)
 // STRUCT FUNCTIONS
 FSplineMeshInitData::~FSplineMeshInitData()
 {
-    for (auto splineMesh : MeshComponentsArray)
+    for (StaticMeshWeakPtr mesh : MeshComponentsArray)
     {
-        if (splineMesh.IsValid())
+        if (mesh.IsValid())
         {
-            splineMesh->ConditionalBeginDestroy();
+            mesh->ConditionalBeginDestroy();
         }
     }
-
-    for (auto arrow : ArrowSplineUpIndicatorArray)
+    for (ArrowWeakPtr arrow : ArrowSplineUpIndicatorArray)
     {
         if (arrow.IsValid())
         {
@@ -211,10 +188,10 @@ void AFlexSplineActor::PreInitializeComponents()
 int32 AFlexSplineActor::GetMeshCountForType(EFlexSplineMeshType MeshType) const
 {
     int32 count = 0;
-    for (const auto& meshInitDataPair : MeshDataInitMap)
+    for (const TTuple<FName, FSplineMeshInitData>& meshInitDataPair : MeshDataInitMap)
     {
-        const auto& meshInitData = meshInitDataPair.Value;
-        if ( (meshInitData.MeshInfo.MeshType == MeshType) && (TEST_BIT(meshInitData.GeneralInfo, EFlexGeneralFlags::Active)) )
+        const FSplineMeshInitData& meshInitData = meshInitDataPair.Value;
+        if ( meshInitData.MeshInfo.MeshType == MeshType && TEST_BIT(meshInitData.GeneralInfo, EFlexGeneralFlags::Active) )
         {
             count++;
         }
@@ -251,7 +228,7 @@ void AFlexSplineActor::InitializeNewMeshData()
 {
     const int32 meshInitMapNum = MeshDataInitMap.Num();
 
-    for (auto& meshInitDataPair : MeshDataInitMap)
+    for (TTuple<FName, FSplineMeshInitData>& meshInitDataPair : MeshDataInitMap)
     {
         FSplineMeshInitData& meshInitData = meshInitDataPair.Value;
         if (!meshInitData.IsInitialized())
@@ -259,12 +236,11 @@ void AFlexSplineActor::InitializeNewMeshData()
             // Generate name for new entry
             for (int32 index = 0; index < meshInitMapNum; index++)
             {
-                const FString newLayerString = FString(TEXT("Layer " + FString::FromInt(index)));
-                const FName newLayerName     = FName(*newLayerString);
-                if ( (!MeshDataInitMap.Contains(newLayerName)) && (newLayerName != LastUsedKey) )
+                const FName newLayerName = FName(*FString(TEXT("Layer " + FString::FromInt(index))));
+                if ( !MeshDataInitMap.Contains(newLayerName) && newLayerName != LastUsedKey )
                 {
                     meshInitDataPair.Key = newLayerName;
-                    LastUsedKey          = newLayerName;
+                    LastUsedKey = newLayerName;
                     break;
                 }
             }
@@ -314,10 +290,10 @@ void AFlexSplineActor::RemovePointDataEntries(const TArray<int32>& DeletedIndice
         }
 
         // Remove arrows
-        for (auto& meshInitDataPair : MeshDataInitMap)
+        for (TTuple<FName, FSplineMeshInitData>& meshInitDataPair : MeshDataInitMap)
         {
             FSplineMeshInitData& meshInitData = meshInitDataPair.Value;
-            WeakArrowComp arrow               = meshInitData.ArrowSplineUpIndicatorArray[index];
+            ArrowWeakPtr arrow                = meshInitData.ArrowSplineUpIndicatorArray[index];
             if (arrow.IsValid())
             {
                 meshInitData.ArrowSplineUpIndicatorArray.Remove(arrow);
@@ -333,7 +309,7 @@ void AFlexSplineActor::InitDataAddMeshes()
 {
     // Each mesh-init data stores all spline mesh components of its type, their location scattered across all spline points
     // Here we add spline meshes until it has as many meshes as there are spline points
-    for (auto& meshInitDataPair : MeshDataInitMap)
+    for (TTuple<FName, FSplineMeshInitData>& meshInitDataPair : MeshDataInitMap)
     {
         FSplineMeshInitData& meshInitData = meshInitDataPair.Value;
         UClass* meshType                  = GetMeshType(meshInitData.MeshInfo.MeshType);
@@ -356,7 +332,7 @@ void AFlexSplineActor::InitDataRemoveMeshes(const TArray<int32>& DeletedIndices)
     for (const int32 index : DeletedIndices)
     {
         // Remove all spline Meshes at this spline index (which was removed)
-        for (auto& meshInitDataPair : MeshDataInitMap)
+        for (TTuple<FName, FSplineMeshInitData>& meshInitDataPair : MeshDataInitMap)
         {
             FSplineMeshInitData& meshInitData = meshInitDataPair.Value;
             const int32 numberOfSplinePoints  = SplineComponent->GetNumberOfSplinePoints();
@@ -387,7 +363,7 @@ void AFlexSplineActor::UpdateDebugInformation()
     const int32 pointDataArraySize = PointDataArray.Num();
     for (int32 index = 0; index < pointDataArraySize; index++)
     {
-        FSplinePointData& pointData = PointDataArray[index];
+        const FSplinePointData& pointData = PointDataArray[index];
 
         // Update text renderer
         UTextRenderComponent* textRenderer = pointData.IndexTextRenderer;
@@ -406,9 +382,9 @@ void AFlexSplineActor::UpdateDebugInformation()
         int32 meshInitIndex = 0;
         for (auto& meshInitDataPair : MeshDataInitMap)
         {
-            FSplineMeshInitData& meshInitData      = meshInitDataPair.Value;
-            UArrowComponent* arrow                 = meshInitData.ArrowSplineUpIndicatorArray[index].Get();
-            const USplineMeshComponent* splineMesh = Cast<USplineMeshComponent>(meshInitData.MeshComponentsArray[index].Get());
+            const FSplineMeshInitData& meshInitData = meshInitDataPair.Value;
+            const USplineMeshComponent* splineMesh  = Cast<USplineMeshComponent>(meshInitData.MeshComponentsArray[index].Get());
+            UArrowComponent* arrow                  = meshInitData.ArrowSplineUpIndicatorArray[index].Get();
 
             if (meshInitData.UpVectorInfo.bShowUpDirection
                 && splineMesh
@@ -436,7 +412,7 @@ void AFlexSplineActor::UpdateMeshComponents()
     const int32 numSplinePoints = SplineComponent->GetNumberOfSplinePoints();
 
     // Update all meshes for the current mesh initializer
-    for (auto& meshInitDataPair : MeshDataInitMap)
+    for (TTuple<FName, FSplineMeshInitData>& meshInitDataPair : MeshDataInitMap)
     {
         FSplineMeshInitData& meshInitData = meshInitDataPair.Value;
         UClass* configuredMeshType        = GetMeshType(meshInitData.MeshInfo.MeshType);
@@ -593,10 +569,10 @@ FVector AFlexSplineActor::GetTextPosition(int32 Index) const
     const FVector splinePointLocation = SplineComponent->GetLocationAtSplinePoint(Index, WorldSpace);
     float highestPoint                = splinePointLocation.Z;
 
-    for (const auto& meshInitDataPair : MeshDataInitMap)
+    for (const TTuple<FName, FSplineMeshInitData>& meshInitDataPair : MeshDataInitMap)
     {
         const FSplineMeshInitData& meshInitData = meshInitDataPair.Value;
-        const WeakStaticMeshComp mesh           = meshInitData.MeshComponentsArray[ (pointArrayMax == Index && Index > 0 && !GetCanLoop(meshInitData))
+        const StaticMeshWeakPtr mesh            = meshInitData.MeshComponentsArray[ (pointArrayMax == Index && Index > 0 && !GetCanLoop(meshInitData))
                                                 ? Index - 1
                                                 : Index ];
 
@@ -639,47 +615,35 @@ bool AFlexSplineActor::CanRenderFromMode(const FSplineMeshInitData& MeshInitData
 
 ECollisionEnabled::Type AFlexSplineActor::GetCollisionEnabled(const FSplineMeshInitData& MeshInitData) const
 {
-    ECollisionEnabled::Type result = ECollisionEnabled::NoCollision;
-
     switch (CollisionActiveConfig)
     {
-    case EFlexGlobalConfigType::Everywhere: result = ECollisionEnabled::QueryAndPhysics; break;
-    case EFlexGlobalConfigType::Nowhere:    result = ECollisionEnabled::NoCollision; break;
-    case EFlexGlobalConfigType::Custom:     result = MeshInitData.PhysicsInfo.Collision; break;
-    default: break;
+    case EFlexGlobalConfigType::Everywhere: return ECollisionEnabled::QueryAndPhysics;
+    case EFlexGlobalConfigType::Nowhere:    return ECollisionEnabled::NoCollision;
+    case EFlexGlobalConfigType::Custom:     return MeshInitData.PhysicsInfo.Collision;
+    default: return ECollisionEnabled::NoCollision;
     }
-
-    return result;
 }
 
 bool AFlexSplineActor::GetCanLoop(const FSplineMeshInitData& MeshInitData) const
 {
-    bool result = false;
-
     switch (LoopConfig)
     {
-    case EFlexGlobalConfigType::Everywhere: result = true;                                                        break;
-    case EFlexGlobalConfigType::Nowhere:    result = false;                                                       break;
-    case EFlexGlobalConfigType::Custom:     result = TEST_BIT(MeshInitData.GeneralInfo, EFlexGeneralFlags::Loop); break;
-    default: break;
+    case EFlexGlobalConfigType::Everywhere: return true;
+    case EFlexGlobalConfigType::Nowhere:    return false;
+    case EFlexGlobalConfigType::Custom:     return TEST_BIT(MeshInitData.GeneralInfo, EFlexGeneralFlags::Loop);
+    default: return false;
     }
-
-    return result;
 }
 
 bool AFlexSplineActor::GetCanSynchronize(const FSplinePointData& PointData) const
 {
-    bool result = false;
-
     switch (SynchronizeConfig)
     {
-    case EFlexGlobalConfigType::Everywhere: result = true; break;
-    case EFlexGlobalConfigType::Nowhere:    result = false; break;
-    case EFlexGlobalConfigType::Custom:     result = PointData.bSynchroniseWithPrevious; break;
-    default: break;
+    case EFlexGlobalConfigType::Everywhere: return true;
+    case EFlexGlobalConfigType::Nowhere:    return false;
+    case EFlexGlobalConfigType::Custom:     return PointData.bSynchroniseWithPrevious;
+    default: return false;
     }
-
-    return result;
 }
 
 FVector AFlexSplineActor::CalculateLocation(const FSplineMeshInitData& MeshInitData, const FSplinePointData& PointData, const int32 Index) const
